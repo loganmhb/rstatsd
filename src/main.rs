@@ -4,5 +4,5 @@ use rstatsd::servers::udp;
 
 fn main() {
     println!("totally running statsd! trust me!");
-    udp::listen_on_socket();
+    udp::listen_on_socket(("localhost", 34254));
 }

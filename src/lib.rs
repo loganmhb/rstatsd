@@ -1,3 +1,3 @@
 pub mod servers;
-pub mod queue;
+pub mod stats;
 

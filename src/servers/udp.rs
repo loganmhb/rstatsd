@@ -4,19 +4,26 @@ use std::vec::Vec;
 use std::io::Write;
 use std::string::String;
 
-use queue::StatsQueue;
+use stats::StatsBuffer;
 
 
-pub fn collect_udp_messages<A: ToSocketAddrs>(addr: A, stats_buffer: StatsQueue) {
+pub fn collect_udp_messages<A: ToSocketAddrs>(addr: A, stats_buffer: StatsBuffer) {
     let socket = UdpSocket::bind(addr).unwrap();
     loop {
         let mut buf = [0; 512];
+
+        // Is it possible that we'll get more than one datagram here?
         let res = socket.recv_from(&mut buf);
+
         match res {
             Ok((amt, _)) => {
                 let mut v: Vec<u8> = Vec::new();
                 v.extend_from_slice(&buf[0..amt]);
-                stats_buffer.push(String::from_utf8(v).unwrap())
+
+                for msg in String::from_utf8(v).unwrap().split("\n") {
+                    // split() leaves an empty iterater at the end if there's a trailing \n
+                    stats_buffer.collect(msg);
+                }
             },
             Err(e) => write!(io::stderr(), "{}", e).unwrap()
         }

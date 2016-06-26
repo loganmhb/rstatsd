@@ -4,12 +4,12 @@ use std::thread;
 use std::time::Duration;
 
 use rstatsd::servers::udp;
-use rstatsd::queue::StatsQueue;
+use rstatsd::stats::StatsBuffer;
 
 
 fn main() {
     println!("totally running statsd! trust me!");
-    let queue = StatsQueue::new();
+    let queue = StatsBuffer::new();
     let queue_handle = queue.clone();
     let server_handle = thread::spawn(move || {
         udp::collect_udp_messages(("localhost", 34254), queue_handle);
@@ -18,8 +18,6 @@ fn main() {
     loop {
         thread::sleep(Duration::from_millis(10000));
         let buf = queue.flush();
-        for msg in buf {
-            println!("{}", msg);
-        }
+        println!("{:?}", buf)
     }
 }

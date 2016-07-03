@@ -20,8 +20,7 @@ pub fn collect_udp_messages<A: ToSocketAddrs>(addr: A, stats_buffer: StatsBuffer
                 let mut v: Vec<u8> = Vec::new();
                 v.extend_from_slice(&buf[0..amt]);
 
-                for msg in String::from_utf8(v).unwrap().split("\n") {
-                    // split() leaves an empty iterater at the end if there's a trailing \n
+                for msg in String::from_utf8(v).unwrap().split_terminator("\n") {
                     stats_buffer.collect(msg);
                 }
             },

@@ -10,25 +10,37 @@ enum Metric<'a> {
     Counter { name: &'a str, val: usize }
 }
 
+
 impl<'a> Metric<'a> {
-    fn from_string(s: &str) -> Result<Metric, String> {
-        let parts: Vec<&str> = s.split(":").collect();
+    fn from_parts(name: &str, val: usize, kind: char) -> Result<Metric, String> {
+        match kind {
+            'c' => Ok(Metric::Counter {name: name, val: val}),
+            _ => Err("Unknown metric type.".to_string())
+        }
+    }
+
+    fn from_str(s: &str) -> Result<Metric, String> {
+        let parts: Vec<&str> = s.split(|c| c == '|' || c == ':').collect();
         match parts.as_slice() {
-            [name, val] => {
-                match val.parse::<usize>() {
-                    Ok(i) => Ok(Metric::Counter { name: name, val: i }),
-                    Err(_) => Err(format!("Unable to parse value: {}", &val))
-                }
-            },
-            _ => Err(format!("Unexpected format: {} (expected <name>:<val>)", s))
+            [name, val_str, kind_str] => {
+                let val: usize = match val_str.parse() {
+                    Ok(i) => i,
+                    Err(_) => return Err("Unparsable value.".to_string())
+                };
+                let kind = try!(kind_str.chars().next().ok_or("Bad format character".to_string()));
+                Metric::from_parts(name, val, kind)
+            }
+            _ => Err("Unrecognized format!".to_string())
         }
     }
 }
+
 
 #[derive(Debug, Clone)]
 pub struct Metrics {
     counters: HashMap<String, usize>
 }
+
 
 impl Metrics {
     fn new() -> Metrics {
@@ -38,12 +50,10 @@ impl Metrics {
     }
 
     fn collect(&mut self, item: &str) {
-        if item != "" {
-            match Metric::from_string(item) {
-                Ok(Metric::Counter {name, val}) =>
-                    *self.counters.entry(name.to_string()).or_insert(0) += val,
-                _ => ()
-            }
+        match Metric::from_str(item) {
+            Ok(Metric::Counter {name, val}) =>
+                *self.counters.entry(name.to_string()).or_insert(0) += val,
+            Err(e) => println!("{}", e)
         }
     }
 }

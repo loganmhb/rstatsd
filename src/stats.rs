@@ -22,7 +22,7 @@ impl<'a> Metric<'a> {
     fn from_str(s: &str) -> Result<Metric, String> {
         let parts: Vec<&str> = s.split(|c| c == '|' || c == ':').collect();
         match parts.as_slice() {
-            [name, val_str, kind_str] => {
+            &[name, val_str, kind_str] => {
                 let val: usize = match val_str.parse() {
                     Ok(i) => i,
                     Err(_) => return Err("Unparsable value.".to_string())

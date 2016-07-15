@@ -8,15 +8,17 @@ use std::collections::HashMap;
 // TODO: add sample rate
 enum Metric<'a> {
     Counter { name: &'a str, val: usize },
-    Gauge { name: &'a str, val: usize }
+    Gauge { name: &'a str, val: usize },
+    Timer { name: &'a str, val: usize }
 }
 
 
 impl<'a> Metric<'a> {
-    fn from_parts(name: &str, val: usize, kind: char) -> Result<Metric, String> {
+    fn from_parts(name: &'a str, val: usize, kind: &str) -> Result<Metric<'a>, String> {
         match kind {
-            'c' => Ok(Metric::Counter {name: name, val: val}),
-            'g' => Ok(Metric::Gauge {name: name, val: val}),
+            "c" => Ok(Metric::Counter {name: name, val: val}),
+            "g" => Ok(Metric::Gauge {name: name, val: val}),
+            "ms" => Ok(Metric::Timer {name: name, val: val}),
             _ => Err("Unknown metric type.".to_string())
         }
     }
@@ -24,14 +26,12 @@ impl<'a> Metric<'a> {
     fn from_str(s: &str) -> Result<Metric, String> {
         let parts: Vec<&str> = s.split(|c| c == '|' || c == ':').collect();
         match parts.as_slice() {
-            &[name, val_str, kind_str] => {
+            &[name, val_str, kind] => {
                 let val: usize = match val_str.parse() {
                     Ok(i) => i,
                     Err(_) => return Err("Unparsable value.".to_string())
                 };
-                let kind = try!(kind_str.chars().next()
-                                .ok_or("Bad format character".to_string()));
-                Metric::from_parts(name, val, kind)
+                Metric::from_parts(name, val, &kind)
             }
             _ => Err("Unrecognized format!".to_string())
         }
@@ -42,7 +42,8 @@ impl<'a> Metric<'a> {
 #[derive(Debug, Clone)]
 pub struct Metrics {
     counters: HashMap<String, usize>,
-    gauges: HashMap<String, usize>
+    gauges: HashMap<String, usize>,
+    timers: HashMap<String, Vec<usize>>
 }
 
 
@@ -50,7 +51,8 @@ impl Metrics {
     fn new() -> Metrics {
         Metrics {
             counters: HashMap::new(),
-            gauges: HashMap::new()
+            gauges: HashMap::new(),
+            timers: HashMap::new()
         }
     }
 
@@ -60,6 +62,11 @@ impl Metrics {
                 *self.counters.entry(name.to_string()).or_insert(0) += val,
             Ok(Metric::Gauge {name, val}) => {
                 self.gauges.insert(name.to_string(), val);},
+            Ok(Metric::Timer {name, val}) => {
+                self.timers.entry(name.to_string())
+                    .or_insert(Vec::new())
+                    .push(val)
+            }
             Err(e) => println!("{}", e)
         }
     }

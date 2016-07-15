@@ -7,7 +7,8 @@ use std::collections::HashMap;
 // TODO: add other metric types
 // TODO: add sample rate
 enum Metric<'a> {
-    Counter { name: &'a str, val: usize }
+    Counter { name: &'a str, val: usize },
+    Gauge { name: &'a str, val: usize }
 }
 
 
@@ -15,6 +16,7 @@ impl<'a> Metric<'a> {
     fn from_parts(name: &str, val: usize, kind: char) -> Result<Metric, String> {
         match kind {
             'c' => Ok(Metric::Counter {name: name, val: val}),
+            'g' => Ok(Metric::Gauge {name: name, val: val}),
             _ => Err("Unknown metric type.".to_string())
         }
     }
@@ -27,7 +29,8 @@ impl<'a> Metric<'a> {
                     Ok(i) => i,
                     Err(_) => return Err("Unparsable value.".to_string())
                 };
-                let kind = try!(kind_str.chars().next().ok_or("Bad format character".to_string()));
+                let kind = try!(kind_str.chars().next()
+                                .ok_or("Bad format character".to_string()));
                 Metric::from_parts(name, val, kind)
             }
             _ => Err("Unrecognized format!".to_string())
@@ -38,14 +41,16 @@ impl<'a> Metric<'a> {
 
 #[derive(Debug, Clone)]
 pub struct Metrics {
-    counters: HashMap<String, usize>
+    counters: HashMap<String, usize>,
+    gauges: HashMap<String, usize>
 }
 
 
 impl Metrics {
     fn new() -> Metrics {
         Metrics {
-            counters: HashMap::new()
+            counters: HashMap::new(),
+            gauges: HashMap::new()
         }
     }
 
@@ -53,6 +58,8 @@ impl Metrics {
         match Metric::from_str(item) {
             Ok(Metric::Counter {name, val}) =>
                 *self.counters.entry(name.to_string()).or_insert(0) += val,
+            Ok(Metric::Gauge {name, val}) => {
+                self.gauges.insert(name.to_string(), val);},
             Err(e) => println!("{}", e)
         }
     }

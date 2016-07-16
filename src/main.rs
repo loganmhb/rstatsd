@@ -11,7 +11,7 @@ fn main() {
     println!("totally running statsd! trust me!");
     let queue = StatsBuffer::new();
     let queue_handle = queue.clone();
-    let server_handle = thread::spawn(move || {
+    thread::spawn(move || {
         udp::collect_udp_messages(("localhost", 34254), queue_handle);
     });
 

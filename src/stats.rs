@@ -2,9 +2,8 @@
 use std::sync::{Mutex, MutexGuard, Arc};
 use std::collections::HashMap;
 
-// Representation of a single metric
 
-// TODO: add other metric types
+// Representation of a single metric
 // TODO: add sample rate
 enum Metric<'a> {
     Counter { name: &'a str, val: usize },
@@ -39,6 +38,7 @@ impl<'a> Metric<'a> {
 }
 
 
+// Representation of all tracked metrics
 #[derive(Debug, Clone)]
 pub struct Metrics {
     counters: HashMap<String, usize>,
@@ -97,6 +97,8 @@ impl StatsBuffer {
     pub fn flush(&self) -> Metrics {
         let mut handle = self.metrics.lock().unwrap();
         let drained_vals: Metrics = handle.clone();
+
+        //TODO: allow (based on config) not deleting gauges, leaving counters at 0, etc
         *handle = Metrics::new();
 
         drained_vals

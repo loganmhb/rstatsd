@@ -12,7 +12,7 @@ fn main() {
     let queue = StatsBuffer::new();
     let queue_handle = queue.clone();
     thread::spawn(move || {
-        udp::collect_udp_messages(("localhost", 34254), queue_handle);
+        udp::collect_udp_messages(("127.0.0.1", 8125), queue_handle);
     });
 
     loop {

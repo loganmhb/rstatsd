@@ -13,4 +13,4 @@ def buildmsg():
 
 while True:
     msg = buildmsg()
-    sock.sendto(msg, ("127.0.0.1", 8125))
+    print sock.sendto(msg, ("127.0.0.1", 8125))
